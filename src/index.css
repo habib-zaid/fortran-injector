@@ -1,0 +1,5 @@
+/* Import Bulma CSS */
+@import 'bulma/css/bulma.min.css';
+
+/* Import Font Awesome */
+@import '@fortawesome/fontawesome-free/css/all.min.css';

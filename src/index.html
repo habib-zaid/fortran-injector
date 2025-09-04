@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Fortran Function Injector</title>
+  <style>
+    /* Splash screen styles */
+    #splashScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease-out;
+    }
+
+    .splash-logo {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      animation: pulse 2s infinite;
+    }
+
+    .splash-title {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #00d1b2;
+      margin-bottom: 0.5rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .splash-subtitle {
+      font-size: 1.2rem;
+      color: #888;
+      margin-bottom: 2rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid #333;
+      border-top: 4px solid #00d1b2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    .loading-text {
+      color: #666;
+      font-size: 1rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
+    #mainApp {
+      display: none;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Theme Toggle Button -->
+  <button id="themeToggle" class="button is-small is-rounded is-info"
+    style="position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; align-items: center; overflow: hidden; transition: width 0.3s;"
+    title="Toggle Theme">
+    <span id="theme-label"
+      style="display: inline-block; width: 0; opacity: 0; white-space: nowrap; transition: width 0.3s, opacity 0.3s; margin-right: 0.5em;">System</span>
+    <span class="icon"><i class="fas fa-cog"></i></span>
+  </button>
+
+  <!-- Splash Screen -->
+  <div id="splashScreen">
+    <div class="splash-logo">🔧</div>
+    <div class="splash-title">Fortran Function Injector</div>
+    <div class="splash-subtitle">Loading your development tools...</div>
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Initializing...</div>
+  </div>
+
+  <!-- Main App -->
+  <div id="mainApp">
+    <div class="container">
+      <section class="section">
+        <div class="content has-text-centered">
+          <h1 class="title is-2 has-text-primary">🔧 Fortran Function Injector</h1>
+          <p class="subtitle is-5">Inject write statements above Fortran function calls</p>
+        </div>
+
+        <div class="box">
+          <div class="field">
+            <label class="label" for="functionName">
+              <span class="icon-text">
+                <span class="icon">
+                  <i class="fas fa-search"></i>
+                </span>
+                <span>Function Name to Find:</span>
+              </span>
+            </label>
+            <div class="control">
+              <input class="input" type="text" id="functionName" placeholder="e.g., dhcrer" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="workspacePath">
+              <span class="icon-text">
+                <span class="icon">
+                  <i class="fas fa-folder-open"></i>
+                </span>
+                <span>Workspace Path:</span>
+              </span>
+            </label>
+            <div class="control has-icons-right" id="browseBtn">
+              <input class="input" type="text" id="workspacePath"
+                placeholder="Path to search in (defaults to root).." />
+              <span class="icon is-small is-right has-text-warning">
+                <i class="fas fa-folder"></i>
+              </span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label" for="outputPath">
+              <span class="icon-text">
+                <span class="icon">
+                  <i class="fas fa-download"></i>
+                </span>
+                <span>Output Path (optional):</span>
+              </span>
+            </label>
+            <div class="control has-icons-right" id="browseOutputBtn">
+              <input class="input" type="text" id="outputPath" placeholder="Path for CSV output (defaults to root).." />
+              <span class="icon is-small is-right has-text-warning">
+                <i class="fas fa-folder"></i>
+              </span>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="control">
+              <button id="searchBtn" class="button is-primary is-fullwidth is-medium">
+                <span class="icon">
+                  <i class="fas fa-search"></i>
+                </span>
+                <span>Search & Inject</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="field" id="exportSection" style="display: none;">
+            <div class="control">
+              <button id="exportCsvBtn" class="button is-danger is-fullwidth is-medium">
+                <span class="icon">
+                  <i class="fas fa-file-csv"></i>
+                </span>
+                <span>Export to CSV</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="box">
+          <h3 class="title is-4">
+            <span class="icon-text">
+              <span class="icon">
+                <i class="fas fa-syringe"></i>
+              </span>
+              <span>Inject Results:</span>
+            </span>
+          </h3>
+          <div id="resultsList" style="max-height: 600px; overflow-y: auto;"></div>
+        </div>
+
+        <div id="statusMessage" class="notification" style="display: none;"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // Theme management using Electron's nativeTheme
+    document.addEventListener('DOMContentLoaded', async function () {
+      const themeToggle = document.getElementById('themeToggle');
+      let currentThemeMode = 'system'; // Start with system
+
+      // Wait for renderer to initialize and load theme from IndexedDB
+      // The renderer will handle theme persistence
+      setTimeout(async () => {
+        // Get initial theme state
+        const themeInfo = await window.electronAPI.getThemeInfo();
+        currentThemeMode = themeInfo.themeSource;
+        updateThemeUI(currentThemeMode);
+        
+        // Save the current theme state to IndexedDB
+        if (window.saveThemePreference) {
+          window.saveThemePreference(currentThemeMode);
+        }
+      }, 100);
+
+      // Theme toggle event - cycles through: System → Dark → Light → System
+      themeToggle.addEventListener('click', async function () {
+        const newThemeMode = await window.electronAPI.cycleTheme(currentThemeMode);
+        currentThemeMode = newThemeMode;
+        updateThemeUI(currentThemeMode);
+
+        // Save theme preference to IndexedDB via renderer
+        if (window.saveThemePreference) {
+          window.saveThemePreference(newThemeMode);
+        }
+      });
+
+      // Function to save theme whenever it changes
+      async function saveCurrentTheme() {
+        if (window.saveThemePreference) {
+          await window.saveThemePreference(currentThemeMode);
+          console.log('💾 Theme saved to IndexedDB:', currentThemeMode);
+        }
+      }
+
+      // Save theme on any change (not just click)
+      // This ensures theme is saved even if changed programmatically
+      setInterval(async () => {
+        const themeInfo = await window.electronAPI.getThemeInfo();
+        if (themeInfo.themeSource !== currentThemeMode) {
+          currentThemeMode = themeInfo.themeSource;
+          updateThemeUI(currentThemeMode);
+          await saveCurrentTheme();
+        }
+      }, 1000); // Check every second
+
+      // Hover effects for text expansion
+      themeToggle.addEventListener('mouseenter', function () {
+        const label = document.getElementById('theme-label');
+        if (label) {
+          label.style.width = '4em';
+          label.style.opacity = '1';
+        }
+      });
+
+      themeToggle.addEventListener('mouseleave', function () {
+        const label = document.getElementById('theme-label');
+        if (label) {
+          label.style.width = '0';
+          label.style.opacity = '0';
+        }
+      });
+
+      function updateThemeUI(themeMode) {
+        const themeToggle = document.getElementById('themeToggle');
+        const themeLabel = document.getElementById('theme-label');
+        const themeIcon = themeToggle.querySelector('.icon i');
+
+        if (themeMode === 'system') {
+          themeLabel.textContent = 'System';
+          themeIcon.className = 'fas fa-desktop';
+          themeToggle.classList.remove('is-inverted');
+          themeToggle.classList.add('is-info');
+          themeToggle.title = 'Current: System Theme (Click for Dark)';
+        } else if (themeMode === 'dark') {
+          themeLabel.textContent = 'Dark';
+          themeIcon.className = 'fas fa-moon';
+          themeToggle.classList.remove('is-inverted', 'is-info');
+          themeToggle.classList.add('is-inverted');
+          themeToggle.title = 'Current: Dark Theme (Click for Light)';
+        } else {
+          themeLabel.textContent = 'Light';
+          themeIcon.className = 'fas fa-cloud-sun';
+          themeToggle.classList.remove('is-inverted', 'is-info');
+          themeToggle.classList.add('is-inverted');
+          themeToggle.title = 'Current: Light Theme (Click for System)';
+        }
+      }
+
+      // Simulate loading time and check if CSS is ready
+      setTimeout(function () {
+        // Hide splash screen and show main app
+        const splashScreen = document.getElementById('splashScreen');
+        const mainApp = document.getElementById('mainApp');
+
+        splashScreen.style.opacity = '0';
+        setTimeout(function () {
+          splashScreen.style.display = 'none';
+          mainApp.style.display = 'block';
+        }, 500);
+      }, 1000); // Show splash for 1 seconds
+    });
+  </script>
+</body>
+
+</html>
